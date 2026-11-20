@@ -2,6 +2,7 @@ const sequelize = require('../config/database');
 const User = require('./User');
 const Store = require('./Store');
 const Rating = require('./Rating');
+const PasswordResetToken = require('./PasswordResetToken');
 
 // Associations
 User.hasOne(Store, {
@@ -40,9 +41,22 @@ Rating.belongsTo(Store, {
   onDelete: 'CASCADE',
 });
 
+User.hasMany(PasswordResetToken, {
+  foreignKey: 'user_id',
+  as: 'passwordResetTokens',
+  onDelete: 'CASCADE',
+});
+
+PasswordResetToken.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+  onDelete: 'CASCADE',
+});
+
 module.exports = {
   sequelize,
   User,
   Store,
   Rating,
+  PasswordResetToken,
 };

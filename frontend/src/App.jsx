@@ -4,6 +4,8 @@ import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserStoresPage from './pages/user/UserStoresPage';
 import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
@@ -42,6 +44,8 @@ function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
       {/* Admin routes */}
       <Route

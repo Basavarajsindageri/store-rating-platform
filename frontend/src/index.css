@@ -2,25 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --theme-accent: #4F46E5;
+  --theme-accent-hover: #4338CA;
+  --theme-accent-light: #EEF2FF;
+  --theme-accent-border: #C7D2FE;
+}
+
+[data-theme="admin"] {
+  --theme-accent: #4F46E5;
+  --theme-accent-hover: #4338CA;
+  --theme-accent-light: #EEF2FF;
+  --theme-accent-border: #C7D2FE;
+}
+
+[data-theme="user"] {
+  --theme-accent: #0D9488;
+  --theme-accent-hover: #0F766E;
+  --theme-accent-light: #F0FDFA;
+  --theme-accent-border: #99F6E4;
+}
+
+[data-theme="owner"] {
+  --theme-accent: #059669;
+  --theme-accent-hover: #047857;
+  --theme-accent-light: #ECFDF5;
+  --theme-accent-border: #A7F3D0;
+}
+
 @layer base {
   body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', sans-serif;
   }
 }
 
-/* Custom subtle scrollbar */
+/* Page fade transition */
+.page-transition {
+  animation: fadeIn 180ms ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 3px;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
 
 ::-webkit-scrollbar-thumb:hover {

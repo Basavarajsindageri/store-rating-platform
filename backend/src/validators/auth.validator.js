@@ -61,9 +61,39 @@ const changePasswordValidator = [
     }),
 ];
 
+const forgotPasswordValidator = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Must be a valid email address'),
+];
+
+const resetPasswordValidator = [
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .matches(passwordPattern)
+    .withMessage(
+      'Password must be 8-16 characters long and include at least one uppercase letter and one special character'
+    ),
+  body('confirmPassword')
+    .notEmpty()
+    .withMessage('Confirm password is required')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+];
+
 module.exports = {
   passwordPattern,
   registerValidator,
   loginValidator,
   changePasswordValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator,
 };

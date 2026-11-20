@@ -8,18 +8,17 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Filter,
   Eye,
-  ShieldCheck,
   Building2,
-  RefreshCw,
   X,
+  CheckCircle2,
 } from 'lucide-react';
 import api from '../../api/axios';
-import Navbar from '../../components/common/Navbar';
+import AdminLayout from '../../layouts/AdminLayout';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Button from '../../components/common/Button';
+import { Skeleton, SkeletonTableRows } from '../../components/common/Skeleton';
 import AddUserModal from '../../components/admin/AddUserModal';
 import AddStoreModal from '../../components/admin/AddStoreModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
@@ -29,8 +28,8 @@ const AdminDashboardPage = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalStores: 0, totalRatings: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Tabs: 'stores' | 'users'
-  const [activeTab, setActiveTab] = useState('stores');
+  // Tabs: 'dashboard' | 'stores' | 'users'
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Stores table state
   const [stores, setStores] = useState([]);
@@ -145,9 +144,10 @@ const AdminDashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'stores') {
+    if (activeTab === 'stores' || activeTab === 'dashboard') {
       fetchStores();
-    } else {
+    }
+    if (activeTab === 'users' || activeTab === 'dashboard') {
       fetchUsers();
     }
   }, [activeTab, fetchStores, fetchUsers]);
@@ -174,468 +174,489 @@ const AdminDashboardPage = () => {
 
   const renderSortIcon = (currentSort, currentOrder, column) => {
     if (currentSort !== column) {
-      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />;
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-30 group-hover:opacity-100 transition-opacity" />;
     }
     return currentOrder === 'ASC' ? (
-      <ArrowUp className="w-3.5 h-3.5 text-indigo-600" />
+      <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
     ) : (
-      <ArrowDown className="w-3.5 h-3.5 text-indigo-600" />
+      <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar />
-
-      {/* Floating Toast */}
+    <AdminLayout
+      activeSection={activeTab}
+      onSelectSection={setActiveTab}
+      onOpenAddUser={() => setIsAddUserOpen(true)}
+      onOpenAddStore={() => setIsAddStoreOpen(true)}
+    >
+      {/* Toast alert */}
       {toast && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-xl shadow-lg bg-emerald-600 text-white text-sm font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl shadow-soft bg-emerald-600 text-white text-xs font-semibold flex items-center gap-2 animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-4 h-4" />
           <span>{toast.message}</span>
-          <button onClick={() => setToast(null)} className="p-0.5 hover:bg-emerald-700 rounded">
-            <X className="w-4 h-4" />
+          <button onClick={() => setToast(null)} className="p-0.5 hover:bg-emerald-700 rounded-lg ml-2">
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header & Quick Actions */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      {/* Top Banner / Actions Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-slate-900 dark:text-white tracking-tight">
+            System Administration
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Real-time analytics and management for registered stores and user accounts
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => setIsAddUserOpen(true)}
+            icon={Plus}
+          >
+            Add User
+          </Button>
+
+          <Button
+            theme="admin"
+            onClick={() => setIsAddStoreOpen(true)}
+            icon={Plus}
+          >
+            Add Store
+          </Button>
+        </div>
+      </div>
+
+      {/* Metric Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex items-center gap-4">
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl shadow-xs">
+            <Users className="w-7 h-7" />
+          </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              System Administration
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Manage platform stores, user accounts, and view platform metrics
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Total Users
             </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsAddUserOpen(true)}
-              className="px-4 py-2.5 bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add User
-            </button>
-            <button
-              onClick={() => setIsAddStoreOpen(true)}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Store
-            </button>
+            {loadingStats ? (
+              <Skeleton className="w-16 h-8 mt-1 rounded-lg" />
+            ) : (
+              <p className="text-3xl font-heading font-extrabold text-slate-900 dark:text-white mt-1">
+                {stats.totalUsers}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Dashboard Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl">
-              <Users className="w-7 h-7" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Users
-              </p>
-              <p className="text-3xl font-extrabold text-slate-900 mt-1">
-                {loadingStats ? '...' : stats.totalUsers}
-              </p>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex items-center gap-4">
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl shadow-xs">
+            <Store className="w-7 h-7" />
           </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl">
-              <Store className="w-7 h-7" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Stores
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Total Stores
+            </p>
+            {loadingStats ? (
+              <Skeleton className="w-16 h-8 mt-1 rounded-lg" />
+            ) : (
+              <p className="text-3xl font-heading font-extrabold text-slate-900 dark:text-white mt-1">
+                {stats.totalStores}
               </p>
-              <p className="text-3xl font-extrabold text-slate-900 mt-1">
-                {loadingStats ? '...' : stats.totalStores}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="p-4 bg-amber-50 text-amber-500 rounded-2xl">
-              <Star className="w-7 h-7 fill-amber-400" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Ratings
-              </p>
-              <p className="text-3xl font-extrabold text-slate-900 mt-1">
-                {loadingStats ? '...' : stats.totalRatings}
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="border-b border-slate-200 px-6 pt-4 flex gap-6">
-            <button
-              onClick={() => setActiveTab('stores')}
-              className={`pb-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
-                activeTab === 'stores'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Store className="w-4 h-4" />
-              Stores Directory ({storesTotal})
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`pb-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
-                activeTab === 'users'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              Users Directory ({usersTotal})
-            </button>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex items-center gap-4">
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/60 text-amber-500 rounded-2xl shadow-xs">
+            <Star className="w-7 h-7 fill-amber-400" />
           </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Total Ratings
+            </p>
+            {loadingStats ? (
+              <Skeleton className="w-16 h-8 mt-1 rounded-lg" />
+            ) : (
+              <p className="text-3xl font-heading font-extrabold text-slate-900 dark:text-white mt-1">
+                {stats.totalRatings}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-          {/* TAB 1: STORES */}
-          {activeTab === 'stores' && (
-            <div className="p-6">
-              {/* Store Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search stores..."
-                    value={storesFilters.search}
-                    onChange={(e) => {
-                      setStoresFilters((prev) => ({ ...prev, search: e.target.value }));
-                      setStoresPage(1);
-                    }}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                  />
-                </div>
+      {/* Tab Navigation in Content Area */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-soft overflow-hidden">
+        <div className="border-b border-slate-200 dark:border-slate-800 px-6 pt-4 flex gap-6">
+          <button
+            onClick={() => setActiveTab('stores')}
+            className={`pb-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
+              activeTab === 'stores' || activeTab === 'dashboard'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            Stores Directory ({storesTotal})
+          </button>
 
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`pb-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-colors ${
+              activeTab === 'users'
+                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Users Directory ({usersTotal})
+          </button>
+        </div>
+
+        {/* TAB 1: STORES */}
+        {(activeTab === 'stores' || activeTab === 'dashboard') && (
+          <div className="p-6">
+            {/* Filter controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Filter by name..."
-                  value={storesFilters.name}
+                  placeholder="Search stores..."
+                  value={storesFilters.search}
                   onChange={(e) => {
-                    setStoresFilters((prev) => ({ ...prev, name: e.target.value }));
+                    setStoresFilters((prev) => ({ ...prev, search: e.target.value }));
                     setStoresPage(1);
                   }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Filter by email..."
-                  value={storesFilters.email}
-                  onChange={(e) => {
-                    setStoresFilters((prev) => ({ ...prev, email: e.target.value }));
-                    setStoresPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Filter by address..."
-                  value={storesFilters.address}
-                  onChange={(e) => {
-                    setStoresFilters((prev) => ({ ...prev, address: e.target.value }));
-                    setStoresPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
+                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
                 />
               </div>
 
-              {/* Stores Table */}
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
-                    <tr>
-                      <th
-                        onClick={() => handleStoreSort('name')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Name</span>
-                          {renderSortIcon(storesSortBy, storesOrder, 'name')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleStoreSort('email')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Email</span>
-                          {renderSortIcon(storesSortBy, storesOrder, 'email')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleStoreSort('address')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Address</span>
-                          {renderSortIcon(storesSortBy, storesOrder, 'address')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleStoreSort('rating')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Rating (Avg)</span>
-                          {renderSortIcon(storesSortBy, storesOrder, 'rating')}
-                        </div>
-                      </th>
-                      <th className="py-3 px-4">Assigned Owner</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {loadingStores ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center">
-                          <LoadingSpinner text="Loading stores..." />
-                        </td>
-                      </tr>
-                    ) : stores.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-slate-500">
-                          No stores match your filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      stores.map((s) => (
-                        <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-semibold text-slate-900">{s.name}</td>
-                          <td className="py-3.5 px-4 text-slate-600">{s.email}</td>
-                          <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate" title={s.address}>
-                            {s.address}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-2">
-                              <StarRating
-                                value={parseFloat(s.averageRating) || 0}
-                                readOnly={true}
-                                size="sm"
-                              />
-                              <span className="font-bold text-slate-800 text-xs">
-                                {parseFloat(s.averageRating) > 0
-                                  ? parseFloat(s.averageRating).toFixed(1)
-                                  : 'No rating'}
-                              </span>
-                              <span className="text-[11px] text-slate-400">
-                                ({s.ratingCount || 0})
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            {s.owner ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                                <Building2 className="w-3.5 h-3.5" />
-                                {s.owner.name}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400 italic">Unassigned</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <input
+                type="text"
+                placeholder="Filter by name..."
+                value={storesFilters.name}
+                onChange={(e) => {
+                  setStoresFilters((prev) => ({ ...prev, name: e.target.value }));
+                  setStoresPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+              />
 
-              <Pagination
-                currentPage={storesPage}
-                totalPages={storesTotalPages}
-                totalItems={storesTotal}
-                limit={storesLimit}
-                onPageChange={(page) => setStoresPage(page)}
+              <input
+                type="text"
+                placeholder="Filter by email..."
+                value={storesFilters.email}
+                onChange={(e) => {
+                  setStoresFilters((prev) => ({ ...prev, email: e.target.value }));
+                  setStoresPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+              />
+
+              <input
+                type="text"
+                placeholder="Filter by address..."
+                value={storesFilters.address}
+                onChange={(e) => {
+                  setStoresFilters((prev) => ({ ...prev, address: e.target.value }));
+                  setStoresPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
               />
             </div>
-          )}
 
-          {/* TAB 2: USERS */}
-          {activeTab === 'users' && (
-            <div className="p-6">
-              {/* User Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={usersFilters.search}
-                    onChange={(e) => {
-                      setUsersFilters((prev) => ({ ...prev, search: e.target.value }));
-                      setUsersPage(1);
-                    }}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                  />
-                </div>
-
-                <input
-                  type="text"
-                  placeholder="Filter by name..."
-                  value={usersFilters.name}
-                  onChange={(e) => {
-                    setUsersFilters((prev) => ({ ...prev, name: e.target.value }));
-                    setUsersPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Filter by email..."
-                  value={usersFilters.email}
-                  onChange={(e) => {
-                    setUsersFilters((prev) => ({ ...prev, email: e.target.value }));
-                    setUsersPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Filter by address..."
-                  value={usersFilters.address}
-                  onChange={(e) => {
-                    setUsersFilters((prev) => ({ ...prev, address: e.target.value }));
-                    setUsersPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600"
-                />
-
-                <select
-                  value={usersFilters.role}
-                  onChange={(e) => {
-                    setUsersFilters((prev) => ({ ...prev, role: e.target.value }));
-                    setUsersPage(1);
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 bg-white text-slate-700"
-                >
-                  <option value="">All Roles</option>
-                  <option value="SYSTEM_ADMIN">System Admin</option>
-                  <option value="STORE_OWNER">Store Owner</option>
-                  <option value="NORMAL_USER">Normal User</option>
-                </select>
-              </div>
-
-              {/* Users Table */}
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 font-semibold text-xs uppercase tracking-wider">
+            {/* Stores Table with Zebra rows */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-xs sm:text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider sticky top-0">
+                  <tr>
+                    <th
+                      onClick={() => handleStoreSort('name')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Store Name</span>
+                        {renderSortIcon(storesSortBy, storesOrder, 'name')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleStoreSort('email')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Email</span>
+                        {renderSortIcon(storesSortBy, storesOrder, 'email')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleStoreSort('address')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Address</span>
+                        {renderSortIcon(storesSortBy, storesOrder, 'address')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleStoreSort('rating')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Rating (Avg)</span>
+                        {renderSortIcon(storesSortBy, storesOrder, 'rating')}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4">Assigned Owner</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                  {loadingStores ? (
+                    <SkeletonTableRows count={5} cols={5} />
+                  ) : stores.length === 0 ? (
                     <tr>
-                      <th
-                        onClick={() => handleUserSort('name')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Name</span>
-                          {renderSortIcon(usersSortBy, usersOrder, 'name')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleUserSort('email')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Email</span>
-                          {renderSortIcon(usersSortBy, usersOrder, 'email')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleUserSort('address')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Address</span>
-                          {renderSortIcon(usersSortBy, usersOrder, 'address')}
-                        </div>
-                      </th>
-                      <th
-                        onClick={() => handleUserSort('role')}
-                        className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors group"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>Role</span>
-                          {renderSortIcon(usersSortBy, usersOrder, 'role')}
-                        </div>
-                      </th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        <Store className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                        <p className="font-semibold">No stores match your filters</p>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {loadingUsers ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center">
-                          <LoadingSpinner text="Loading users..." />
+                  ) : (
+                    stores.map((s, idx) => (
+                      <tr
+                        key={s.id}
+                        className={`transition-colors hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 ${
+                          idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/30' : ''
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{s.name}</td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">{s.email}</td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={s.address}>
+                          {s.address}
                         </td>
-                      </tr>
-                    ) : users.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-slate-500">
-                          No users match your filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      users.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-semibold text-slate-900">{u.name}</td>
-                          <td className="py-3.5 px-4 text-slate-600">{u.email}</td>
-                          <td className="py-3.5 px-4 text-slate-600 max-w-xs truncate" title={u.address}>
-                            {u.address}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                                u.role === 'SYSTEM_ADMIN'
-                                  ? 'bg-rose-100 text-rose-800 border-rose-200'
-                                  : u.role === 'STORE_OWNER'
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                  : 'bg-indigo-100 text-indigo-800 border-indigo-200'
-                              }`}
-                            >
-                              {u.role}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <StarRating
+                              value={parseFloat(s.averageRating) || 0}
+                              readOnly={true}
+                              size="sm"
+                            />
+                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                              {parseFloat(s.averageRating) > 0
+                                ? parseFloat(s.averageRating).toFixed(1)
+                                : 'No rating'}
                             </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedUserId(u.id);
-                                setIsUserDetailsOpen(true);
-                              }}
-                              className="px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors inline-flex items-center gap-1"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                            <span className="text-[11px] text-slate-400">
+                              ({s.ratingCount || 0})
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {s.owner ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                              <Building2 className="w-3.5 h-3.5" />
+                              {s.owner.name}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Unassigned</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={storesPage}
+              totalPages={storesTotalPages}
+              totalItems={storesTotal}
+              limit={storesLimit}
+              onPageChange={(p) => setStoresPage(p)}
+            />
+          </div>
+        )}
+
+        {/* TAB 2: USERS */}
+        {activeTab === 'users' && (
+          <div className="p-6">
+            {/* User filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={usersFilters.search}
+                  onChange={(e) => {
+                    setUsersFilters((prev) => ({ ...prev, search: e.target.value }));
+                    setUsersPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+                />
               </div>
 
-              <Pagination
-                currentPage={usersPage}
-                totalPages={usersTotalPages}
-                totalItems={usersTotal}
-                limit={usersLimit}
-                onPageChange={(page) => setUsersPage(page)}
+              <input
+                type="text"
+                placeholder="Filter by name..."
+                value={usersFilters.name}
+                onChange={(e) => {
+                  setUsersFilters((prev) => ({ ...prev, name: e.target.value }));
+                  setUsersPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
               />
+
+              <input
+                type="text"
+                placeholder="Filter by email..."
+                value={usersFilters.email}
+                onChange={(e) => {
+                  setUsersFilters((prev) => ({ ...prev, email: e.target.value }));
+                  setUsersPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+              />
+
+              <input
+                type="text"
+                placeholder="Filter by address..."
+                value={usersFilters.address}
+                onChange={(e) => {
+                  setUsersFilters((prev) => ({ ...prev, address: e.target.value }));
+                  setUsersPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+              />
+
+              <select
+                value={usersFilters.role}
+                onChange={(e) => {
+                  setUsersFilters((prev) => ({ ...prev, role: e.target.value }));
+                  setUsersPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 focus:border-indigo-600"
+              >
+                <option value="">All Roles</option>
+                <option value="SYSTEM_ADMIN">System Admin</option>
+                <option value="STORE_OWNER">Store Owner</option>
+                <option value="NORMAL_USER">Normal User</option>
+              </select>
             </div>
-          )}
-        </div>
-      </main>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-xs sm:text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider sticky top-0">
+                  <tr>
+                    <th
+                      onClick={() => handleUserSort('name')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>User Name</span>
+                        {renderSortIcon(usersSortBy, usersOrder, 'name')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleUserSort('email')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Email</span>
+                        {renderSortIcon(usersSortBy, usersOrder, 'email')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleUserSort('address')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Address</span>
+                        {renderSortIcon(usersSortBy, usersOrder, 'address')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleUserSort('role')}
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Role</span>
+                        {renderSortIcon(usersSortBy, usersOrder, 'role')}
+                      </div>
+                    </th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                  {loadingUsers ? (
+                    <SkeletonTableRows count={5} cols={5} />
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        <Users className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                        <p className="font-semibold">No users match your filters</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((u, idx) => (
+                      <tr
+                        key={u.id}
+                        className={`transition-colors hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 ${
+                          idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/30' : ''
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{u.name}</td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">{u.email}</td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={u.address}>
+                          {u.address}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                              u.role === 'SYSTEM_ADMIN'
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                                : u.role === 'STORE_OWNER'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUserId(u.id);
+                              setIsUserDetailsOpen(true);
+                            }}
+                            icon={Eye}
+                          >
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={usersPage}
+              totalPages={usersTotalPages}
+              totalItems={usersTotal}
+              limit={usersLimit}
+              onPageChange={(p) => setUsersPage(p)}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
       <AddUserModal
@@ -666,7 +687,7 @@ const AdminDashboardPage = () => {
           setSelectedUserId(null);
         }}
       />
-    </div>
+    </AdminLayout>
   );
 };
 
